@@ -1,0 +1,120 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&display=swap');
+
+
+*{
+
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+
+}
+
+h1, h2, h3, h4, p {
+    color: white;
+}
+
+body{
+    
+    padding: 1rem;
+    background: linear-gradient(125deg, rgb(221, 248, 248) 0%, rgb(235, 210, 234) 100%);
+    margin-top: 5rem;
+    
+   
+}
+.container {
+    max-width: 900px;
+    border: 3px solid rgba(255, 255, 255, 0.911);
+   
+}
+
+.main_1{
+    height: 30vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    
+    
+    background: linear-gradient(45deg, rgba(34,193,195,1) 0%, rgba(253,45,245,1) 100%);
+    padding: 3rem 1rem;
+    
+}
+
+input {
+    background: none;
+    border: 1px solid white;
+    width: 300px;
+    font-size: 30px;
+    margin: 15px 0;
+    color: rgba(255, 255, 255, 0.65);
+   display: flex;
+   align-items: flex-end;
+}
+
+
+
+.main_1 > h3 {
+    font-size: 1.2rem;
+    
+}
+
+
+
+
+.main_2 ul {
+    background-color: rgb(16, 26, 26);
+    height: 40vh;
+    display: grid;
+    justify-content: center;
+    align-items: center;
+}
+
+.main_2 ul li {
+    list-style: none;
+}
+
+.conversion {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.conversion p {
+    font-size: 20px;
+}
+
+.length {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    font-size: 13px;
+    font-weight: 100;
+    color: rgba(255, 255, 255, 0.95);
+    
+}
+
+.M_F, .F_M {
+    padding: 0 10px;
+}
+
+.M_F {
+    border-right: 1px white solid;
+}
+
+button {
+    background: rgba(255,255,255,0.15);
+    border: none;
+    border: 1px solid rgb(187, 187, 187);
+    width: 7rem;
+    height: 3rem;
+    font-size: 1rem;
+    color: azure;
+}
+
+button:hover {
+    background-color: white;
+    color: rgb(21, 28, 29);
+    
+}

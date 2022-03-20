@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/solid.css">
+
+    <title>Metric COnverter</title>
+</head>
+<body>
+
+    <div class="container">
+        <div class="main_1">
+            <h3>Metric/Imperial unit Conversion</h2>
+            <input type="number" id="input-get" >
+            <div class="btns">
+                <button id="btn-get" onclick="convert()">Convert</button>
+                <button id="btn-clear" onclick="reset()">Reset</button>
+            </div>
+        </div>
+
+        <div class="main_2">
+        <ul>
+            <li>
+                <div class="conversion">
+                    <p>Length (Meter/Feet)</p>
+
+                    <div class="length">
+                    <div class="M_F"><span id="M_F-meters">0</span><span> meters = </span><span id="M_F-feet">0.00</span><Span> feet </Span></div>
+                    <div class="F_M"><span id="F_M-feet">0</span><span> feet = </span><span id="F_M-meters">0.00</span><Span> meters </Span></div>
+                </div>
+            </li>
+
+            <li>
+                <div class="conversion">
+                    <p>Volume (Liters/Gallons)</p>
+
+                    <div class="length">
+                    <div class="M_F"><span id="L_G-liters">0</span><span> liters = </span><span id="L_G-gallons">0.00</span><Span> gallons </Span></div>
+                    <div class="F_M"><span id="G_L-gallons">0</span><span> gallons = </span><span id="G_L-liters">0.00</span><Span> litres </Span></div>
+                </div>
+            </li>
+
+            <li>
+                <div class="conversion">
+                    <p>Mass (Kilograms/Pounds)</p>
+
+                    <div class="length">
+                    <div class="M_F"><span id="K_P-kilos">0</span><span> kilos = </span><span id="K_P-pounds">0.00</span><Span> pounds </Span></div>
+                    <div class="F_M"><span id="P_K-pounds">0</span><span> pounds = </span><span id="P_K-kilos">0.00</span><Span> kilos </Span></div>
+                </div>
+            </li>
+        </ul>
+    </div>
+
+    </div>
+
+    
+    
+</body>
+</html>
+<script src="script.js"></script>
