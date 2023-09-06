@@ -3,7 +3,7 @@ name: Manual Docker Image CI
 on:
   push:
     branches:
-      - test
+      - main
 
 jobs:
 
@@ -29,4 +29,4 @@ jobs:
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v5
         with:
-          branch: production-promotion      
+          branch: test   
