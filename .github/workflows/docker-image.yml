@@ -49,5 +49,5 @@ jobs:
           script: |
             echo "$TOKEN" | docker login ghcr.io -u USERNAME --password-stdin
             export EXTERNAL_VARIABLE="$IMAGE"
-            docker compose up -d
+            docker-compose up -d
             docker ps     
