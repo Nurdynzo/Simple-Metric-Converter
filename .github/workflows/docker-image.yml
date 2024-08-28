@@ -1,21 +1,43 @@
-name: Manual Docker Image CI
+name: 'Manual Staging APK Build'
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Publish to'
+        # required: true
+        type: choice
+        default: 'Firebase App Distribution'
+        options:
+          - 'Firebase App Distribution'
+          - 'Google Play Store Internal'
+          - 'Google Play Store Production'
+      releaseNotes:
+        description: 'Release Notes'
+        required: false
+      versionNamePrefix:
+        description: 'Version Name Prefix'
+        required: false
+        default: 'Staging Build APK'
+        type: string
+      versionCode:
+        description: 'Build Number'
+        required: false
+        default: ''
+        type: string
+
 env:
   REGISTRY: ghcr.io
   REPO_NAME: nurdynzo
-  IMAGE_NAME: test
   
-jobs:
-  build-and-push:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
 
+
+
+jobs:
+  uploadApkFirebase:
+    name: Firebase Distribution
+    runs-on: ubuntu-latest
+    if: inputs.publish == 'Firebase App Distribution'
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
@@ -30,6 +52,7 @@ jobs:
     - name: Build, tag, and push image to GHCR
       id: build-image
       env:
+        IMAGE_NAME: test
         COMMIT_ID: ${{ github.sha }}
       run: |
         IMAGE_TAG=$(echo $COMMIT_ID | cut -c 1-7)
@@ -37,7 +60,7 @@ jobs:
         docker push $REGISTRY/$REPO_NAME/$IMAGE_NAME:$IMAGE_TAG
         echo "image=$REGISTRY/$REPO_NAME/$IMAGE_NAME:$IMAGE_TAG" >> $GITHUB_OUTPUT
         
-    - name: SSH into EC2 Instance
+    - name: Deploy to Server Instance
       env:
           IMAGE: ${{ steps.build-image.outputs.image }}
           TOKEN: ${{ secrets.DOCKER_TOKEN }}
@@ -51,4 +74,93 @@ jobs:
             echo "$TOKEN" | docker login ghcr.io -u USERNAME --password-stdin
             export EXTERNAL_VARIABLE="$IMAGE"
             docker-compose up -d
-            docker ps     
+            docker ps   
+
+  uploadApkGooglePlayInternal:
+    name: GooglePlay Internal
+    runs-on: ubuntu-latest
+    if: inputs.publish == 'Google Play Store Internal'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup
+        uses: ./.github/workflows/actions/setup
+      - name: Tag Apk
+        id: apk-name
+        env:
+          ENV_VARS: ${{ secrets.PROD_ENV }}
+          GOOGLE_PLAY_SERVICE_ACCOUNT: ${{ secrets.GOOGLE_PLAY_STORE_ACCOUNT }}
+          VERSION_NAME: ${{ inputs.versionNamePrefix }}
+          VERSION_CODE: ${{ inputs.versionCode }}
+        run: |
+          echo "$ENV_VARS">.env
+          echo "$GOOGLE_PLAY_SERVICE_ACCOUNT">plateaumed_service_account.json  
+          APK_NAME=$(echo $VERSION_CODE-$VERSION_NAME)
+          echo "::set-output name=name::$APK_NAME"
+      - name: Run Fastlane Deployment
+        run: fastlane deploy_to_play_store
+        env:
+          APK_VERSION_NAME: ${{ steps.apk-name.outputs.name }}
+          ANDROID_KEYSTORE_FILE: ${{ secrets.ANDROID_KEYSTORE_FILE }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEYSTORE_ALIAS: ${{ secrets.ANDROID_KEYSTORE_ALIAS }}
+          RELEASE_TRACK: internal
+      - name: Send Slack Notification
+        id: send-notification
+        uses: ./.github/workflows/actions/notification/successfulDeploy
+        with:
+          slack: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  uploadApkGooglePlayProduction:
+    name: GooglePlay Production
+    runs-on: ubuntu-latest
+    if: inputs.publish == 'Google Play Store Production'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup
+        uses: ./.github/workflows/actions/setup
+      - name: Tag Apk
+        id: apk-name
+        env:
+          ENV_VARS: ${{ secrets.PROD_ENV }}
+          GOOGLE_PLAY_SERVICE_ACCOUNT: ${{ secrets.GOOGLE_PLAY_STORE_ACCOUNT }}
+          VERSION_NAME: ${{ inputs.versionNamePrefix }}
+          VERSION_CODE: ${{ inputs.versionCode }}
+        run: |
+          echo "$ENV_VARS">.env
+          echo "$GOOGLE_PLAY_SERVICE_ACCOUNT">plateaumed_service_account.json  
+          APK_NAME=$(echo $VERSION_CODE-$VERSION_NAME)
+          echo "::set-output name=name::$APK_NAME"
+      - name: Run Fastlane Deployment
+        run: fastlane deploy_to_play_store
+        env:
+          APK_VERSION_NAME: ${{ steps.apk-name.outputs.name }}
+          ANDROID_KEYSTORE_FILE: ${{ secrets.ANDROID_KEYSTORE_FILE }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEYSTORE_ALIAS: ${{ secrets.ANDROID_KEYSTORE_ALIAS }}
+          RELEASE_TRACK: production
+      - name: Send Slack Notification
+        id: send-notification
+        uses: ./.github/workflows/actions/notification/successfulDeploy
+        with:
+          slack: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  run-if-failed:
+    name: Notification
+    runs-on: ubuntu-latest
+    needs:
+       - uploadApkFirebase
+       - uploadApkGooglePlayInternal
+       - uploadApkGooglePlayProduction
+    if: always() && ( needs.uploadApkFirebase.result == 'failure' || needs.uploadApkGooglePlayInternal.result == 'failure' || needs.uploadApkGooglePlayProduction.result == 'failure')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Send slack message on scan failure
+        uses: ./.github/workflows/actions/notification/scanFailure
+        with:
+          uploadApkFirebase: ${{ needs.uploadApkFirebase.result }}
+          uploadApkGooglePlayInternal: ${{ needs.uploadApkGooglePlayInternal.result }}
+          uploadApkGooglePlayProduction: ${{ needs.uploadApkGooglePlayProduction.result }}
+          slack: ${{ secrets.SLACK_WEBHOOK_URL }}            
