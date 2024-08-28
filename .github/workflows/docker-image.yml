@@ -7,7 +7,7 @@ on:
         description: 'Choose App to Deploy'
         # required: true
         type: choice
-        # default: 'Choose App to Deploy'
+        default: ''
         options:
           - 'QACE CMS'
           - 'PMS WEB'
