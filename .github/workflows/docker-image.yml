@@ -4,27 +4,15 @@ on:
   workflow_dispatch:
     inputs:
       publish:
-        description: 'Publish to'
+        description: 'Choose App to Deploy'
         # required: true
         type: choice
-        default: 'Firebase App Distribution'
+        # default: 'Choose App to Deploy'
         options:
-          - 'Firebase App Distribution'
-          - 'Google Play Store Internal'
-          - 'Google Play Store Production'
-      releaseNotes:
-        description: 'Release Notes'
-        required: false
-      versionNamePrefix:
-        description: 'Version Name Prefix'
-        required: false
-        default: 'Staging Build APK'
-        type: string
-      versionCode:
-        description: 'Build Number'
-        required: false
-        default: ''
-        type: string
+          - 'QACE CMS'
+          - 'PMS WEB'
+          - 'QACE WEB'
+          - 'QACE PMS'
 
 env:
   REGISTRY: ghcr.io
