@@ -6,7 +6,7 @@ on:
       - main
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: test
+  IMAGE_NAME: Nurdynzo/test
   
 jobs:
   build-and-push:
