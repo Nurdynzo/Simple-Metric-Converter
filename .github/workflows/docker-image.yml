@@ -3,9 +3,10 @@ name: Manual Docker Image CI
 on:
   push:
     branches:
-      - mains
+      - main
 env:
   REGISTRY: ghcr.io
+  IMAGE_NAME: test
   
 jobs:
   build-and-push:
@@ -23,7 +24,7 @@ jobs:
       with:
         registry: ${{ env.REGISTRY }}
         username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
+        password: ${{ secrets.DOCKER_TOKEN }}
 
     - name: Extract metadata (tags, labels) for Docker
       id: meta
