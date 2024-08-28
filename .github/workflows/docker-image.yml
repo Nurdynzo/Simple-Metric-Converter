@@ -6,7 +6,8 @@ on:
       - main
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: nurdynzo/test
+  REPO_NAME: nurdynzo
+  IMAGE_NAME: test
   
 jobs:
   build-and-push:
@@ -16,36 +17,35 @@ jobs:
       packages: write
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+    # - name: Checkout repository
+    #   uses: actions/checkout@v3
 
-    - name: Log in to the Container registry
-      uses: docker/login-action@v2
-      with:
-        registry: ${{ env.REGISTRY }}
-        username: ${{ github.actor }}
-        password: ${{ secrets.DOCKER_TOKEN }}
+    # - name: Log in to the Container registry
+    #   uses: docker/login-action@v2
+    #   with:
+    #     registry: ${{ env.REGISTRY }}
+    #     username: ${{ github.actor }}
+    #     password: ${{ secrets.DOCKER_TOKEN }}
 
-    - name: Build, tag, and push image to GHCR
-      id: build-image
+    # - name: Build, tag, and push image to GHCR
+    #   id: build-image
+    #   env:
+    #     COMMIT_ID: ${{ github.sha }}
+    #   run: |
+    #     IMAGE_TAG=$(echo ${{ inputs.branchTag }} | cut -c 1-7)
+    #     docker build -t $REGISTRY/$REPO_NAME/$IMAGE_NAME:$IMAGE_TAG .
+    #     docker push $REGISTRY/$REPO_NAME/$IMAGE_NAME:$IMAGE_TAG
+    #     echo "image=$REGISTRY/$REPO_NAME/$IMAGE_NAME:$IMAGE_TAG" >> $GITHUB_OUTPUT
+    - name: SSH into EC2 Instance
       env:
-        # GHCR_REGISTRY: ${{ env.REGISTRY }}
-        # IMAGE_NAME: ${{ env.IMAGE_NAME }}
-        IMAGE_TAG: ${{ github.sha }}
-      run: |
-        docker build -t $REGISTRY/$IMAGE_NAME:2 .
-        docker push $REGISTRY/$IMAGE_NAME:2
-        # echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
-    # - name: Extract metadata (tags, labels) for Docker
-    #   id: meta
-    #   uses: docker/metadata-action@v4
-    #   with:
-    #     images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-
-    # - name: Build and push Docker image
-    #   uses: docker/build-push-action@v4
-    #   with:
-    #     context: .
-    #     push: true
-    #     tags: ${{ steps.meta.outputs.tags }}
-    #     labels: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:develop
+          IMAGE: ${{ steps.build-image.outputs.image }}
+          TOKEN: ${{ secrets.DOCKER_TOKEN }}
+      uses: appleboy/ssh-action@master
+      with:
+          host: ${{ secrets.DEPLOY_SERVER }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.PRIVATE_KEY }}
+          envs: IMAGE,TOKEN
+          script: |
+            echo "$TOKEN" | docker login ghcr.io -u USERNAME --password-stdin
+            docker ps     
