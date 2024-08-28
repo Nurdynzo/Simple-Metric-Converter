@@ -3,8 +3,10 @@ name: Manual Docker Image CI
 on:
   push:
     branches:
-      - main
-
+      - mains
+env:
+  REGISTRY: ghcr.io
+  
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
