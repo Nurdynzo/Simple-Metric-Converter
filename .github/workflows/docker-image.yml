@@ -37,5 +37,5 @@ jobs:
       with:
         context: .
         push: true
-        tags: develop-2
-        labels: ${{ steps.meta.outputs.labels }}
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:develop
