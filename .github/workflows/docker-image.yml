@@ -41,7 +41,7 @@ jobs:
         COMMIT_ID: ${{ github.sha }}
       run: |
         IMAGE_TAG=$(echo $COMMIT_ID | cut -c 1-7)
-        docker build -t $REGISTRY/$REPO_NAME/$IMAGE_NAME:develop-$IMAGE_TAG Dockerfile .
+        docker build -t $REGISTRY/$REPO_NAME/$IMAGE_NAME:develop-$IMAGE_TAG  .
         docker push $REGISTRY/$REPO_NAME/$IMAGE_NAME:develop-$IMAGE_TAG
         echo "image=$REGISTRY/$REPO_NAME/$IMAGE_NAME:develop-$IMAGE_TAG" >> $GITHUB_OUTPUT
         
