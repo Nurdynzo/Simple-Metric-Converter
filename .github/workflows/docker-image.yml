@@ -37,13 +37,13 @@ jobs:
     - name: Build, tag, and push image to GHCR
       id: build-image
       env:
-        IMAGE_NAME: test
+        IMAGE_NAME: qace-cms
         COMMIT_ID: ${{ github.sha }}
       run: |
         IMAGE_TAG=$(echo $COMMIT_ID | cut -c 1-7)
-        docker build -t $REGISTRY/$REPO_NAME/$IMAGE_NAME:$IMAGE_TAG .
-        docker push $REGISTRY/$REPO_NAME/$IMAGE_NAME:$IMAGE_TAG
-        echo "image=$REGISTRY/$REPO_NAME/$IMAGE_NAME:$IMAGE_TAG" >> $GITHUB_OUTPUT
+        docker build -t $REGISTRY/$REPO_NAME/$IMAGE_NAME:develop-$IMAGE_TAG -f ./apps/pms-web/Dockerfile .
+        docker push $REGISTRY/$REPO_NAME/$IMAGE_NAME:develop-$IMAGE_TAG
+        echo "image=$REGISTRY/$REPO_NAME/$IMAGE_NAME:develop-$IMAGE_TAG" >> $GITHUB_OUTPUT
         
     - name: Deploy to Server Instance
       env:
@@ -57,111 +57,132 @@ jobs:
           envs: IMAGE,TOKEN
           script: |
             echo "$TOKEN" | docker login ghcr.io -u USERNAME --password-stdin
-            export EXTERNAL_VARIABLE="$IMAGE"
-            docker-compose up -d
-            docker ps   
+            export QACE_CMS_IMAGE="$IMAGE"
+            docker-compose -f /home/ubuntu/qace/pms-web/compose.yaml up -d
+            docker ps
 
   deployQaceWEB:
     name: Qace WEB Deployment
     runs-on: ubuntu-latest
-    if: inputs.publish == 'Google Play Store Internal'
+    if: inputs.publish == 'QACE CMS'
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Setup
-        uses: ./.github/workflows/actions/setup
-      - name: Tag Apk
-        id: apk-name
-        env:
-          ENV_VARS: ${{ secrets.PROD_ENV }}
-          GOOGLE_PLAY_SERVICE_ACCOUNT: ${{ secrets.GOOGLE_PLAY_STORE_ACCOUNT }}
-          VERSION_NAME: ${{ inputs.versionNamePrefix }}
-          VERSION_CODE: ${{ inputs.versionCode }}
-        run: |
-          echo "$ENV_VARS">.env
-          echo "$GOOGLE_PLAY_SERVICE_ACCOUNT">plateaumed_service_account.json  
-          APK_NAME=$(echo $VERSION_CODE-$VERSION_NAME)
-          echo "::set-output name=name::$APK_NAME"
-      - name: Run Fastlane Deployment
-        run: fastlane deploy_to_play_store
-        env:
-          APK_VERSION_NAME: ${{ steps.apk-name.outputs.name }}
-          ANDROID_KEYSTORE_FILE: ${{ secrets.ANDROID_KEYSTORE_FILE }}
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEYSTORE_ALIAS: ${{ secrets.ANDROID_KEYSTORE_ALIAS }}
-          RELEASE_TRACK: internal
-      - name: Send Slack Notification
-        id: send-notification
-        uses: ./.github/workflows/actions/notification/successfulDeploy
-        with:
-          slack: ${{ secrets.SLACK_WEBHOOK_URL }}
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Log in to the Container registry
+      uses: docker/login-action@v2
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.DOCKER_TOKEN }}
+
+    - name: Build, tag, and push image to GHCR
+      id: build-image
+      env:
+        IMAGE_NAME: qace-cms
+        COMMIT_ID: ${{ github.sha }}
+      run: |
+        IMAGE_TAG=$(echo $COMMIT_ID | cut -c 1-7)
+        docker build -t $REGISTRY/$REPO_NAME/$IMAGE_NAME:develop-$IMAGE_TAG -f ./apps/pms-web/Dockerfile .
+        docker push $REGISTRY/$REPO_NAME/$IMAGE_NAME:develop-$IMAGE_TAG
+        echo "image=$REGISTRY/$REPO_NAME/$IMAGE_NAME:develop-$IMAGE_TAG" >> $GITHUB_OUTPUT
+        
+    - name: Deploy to Server Instance
+      env:
+          IMAGE: ${{ steps.build-image.outputs.image }}
+          TOKEN: ${{ secrets.DOCKER_TOKEN }}
+      uses: appleboy/ssh-action@master
+      with:
+          host: ${{ secrets.DEPLOY_SERVER }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.PRIVATE_KEY }}
+          envs: IMAGE,TOKEN
+          script: |
+            echo "$TOKEN" | docker login ghcr.io -u USERNAME --password-stdin
+            export QACE_CMS_IMAGE="$IMAGE"
+            docker-compose -f /home/ubuntu/qace/pms-web/compose.yaml up -d
+            docker ps
 
   deployPMSserver:
     name: PMS Server Deployment
     runs-on: ubuntu-latest
-    if: inputs.publish == 'Google Play Store Production'
+    if: inputs.publish == 'QACE CMS'
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Setup
-        uses: ./.github/workflows/actions/setup
-      - name: Tag Apk
-        id: apk-name
-        env:
-          ENV_VARS: ${{ secrets.PROD_ENV }}
-          GOOGLE_PLAY_SERVICE_ACCOUNT: ${{ secrets.GOOGLE_PLAY_STORE_ACCOUNT }}
-          VERSION_NAME: ${{ inputs.versionNamePrefix }}
-          VERSION_CODE: ${{ inputs.versionCode }}
-        run: |
-          echo "$ENV_VARS">.env
-          echo "$GOOGLE_PLAY_SERVICE_ACCOUNT">plateaumed_service_account.json  
-          APK_NAME=$(echo $VERSION_CODE-$VERSION_NAME)
-          echo "::set-output name=name::$APK_NAME"
-      - name: Run Fastlane Deployment
-        run: fastlane deploy_to_play_store
-        env:
-          APK_VERSION_NAME: ${{ steps.apk-name.outputs.name }}
-          ANDROID_KEYSTORE_FILE: ${{ secrets.ANDROID_KEYSTORE_FILE }}
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEYSTORE_ALIAS: ${{ secrets.ANDROID_KEYSTORE_ALIAS }}
-          RELEASE_TRACK: production
-      - name: Send Slack Notification
-        id: send-notification
-        uses: ./.github/workflows/actions/notification/successfulDeploy
-        with:
-          slack: ${{ secrets.SLACK_WEBHOOK_URL }}          
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Log in to the Container registry
+      uses: docker/login-action@v2
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.DOCKER_TOKEN }}
+
+    - name: Build, tag, and push image to GHCR
+      id: build-image
+      env:
+        IMAGE_NAME: qace-cms
+        COMMIT_ID: ${{ github.sha }}
+      run: |
+        IMAGE_TAG=$(echo $COMMIT_ID | cut -c 1-7)
+        docker build -t $REGISTRY/$REPO_NAME/$IMAGE_NAME:develop-$IMAGE_TAG -f ./apps/pms-web/Dockerfile .
+        docker push $REGISTRY/$REPO_NAME/$IMAGE_NAME:develop-$IMAGE_TAG
+        echo "image=$REGISTRY/$REPO_NAME/$IMAGE_NAME:develop-$IMAGE_TAG" >> $GITHUB_OUTPUT
+        
+    - name: Deploy to Server Instance
+      env:
+          IMAGE: ${{ steps.build-image.outputs.image }}
+          TOKEN: ${{ secrets.DOCKER_TOKEN }}
+      uses: appleboy/ssh-action@master
+      with:
+          host: ${{ secrets.DEPLOY_SERVER }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.PRIVATE_KEY }}
+          envs: IMAGE,TOKEN
+          script: |
+            echo "$TOKEN" | docker login ghcr.io -u USERNAME --password-stdin
+            export QACE_CMS_IMAGE="$IMAGE"
+            docker-compose -f /home/ubuntu/qace/pms-web/compose.yaml up -d
+            docker ps        
 
   deployPMSWEB:
     name: PMS WEB Deployment
     runs-on: ubuntu-latest
-    if: inputs.publish == 'Google Play Store Production'
+    if: inputs.publish == 'QACE CMS'
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Setup
-        uses: ./.github/workflows/actions/setup
-      - name: Tag Apk
-        id: apk-name
-        env:
-          ENV_VARS: ${{ secrets.PROD_ENV }}
-          GOOGLE_PLAY_SERVICE_ACCOUNT: ${{ secrets.GOOGLE_PLAY_STORE_ACCOUNT }}
-          VERSION_NAME: ${{ inputs.versionNamePrefix }}
-          VERSION_CODE: ${{ inputs.versionCode }}
-        run: |
-          echo "$ENV_VARS">.env
-          echo "$GOOGLE_PLAY_SERVICE_ACCOUNT">plateaumed_service_account.json  
-          APK_NAME=$(echo $VERSION_CODE-$VERSION_NAME)
-          echo "::set-output name=name::$APK_NAME"
-      - name: Run Fastlane Deployment
-        run: fastlane deploy_to_play_store
-        env:
-          APK_VERSION_NAME: ${{ steps.apk-name.outputs.name }}
-          ANDROID_KEYSTORE_FILE: ${{ secrets.ANDROID_KEYSTORE_FILE }}
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEYSTORE_ALIAS: ${{ secrets.ANDROID_KEYSTORE_ALIAS }}
-          RELEASE_TRACK: production
-      - name: Send Slack Notification
-        id: send-notification
-        uses: ./.github/workflows/actions/notification/successfulDeploy
-        with:
-          slack: ${{ secrets.SLACK_WEBHOOK_URL }}          
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Log in to the Container registry
+      uses: docker/login-action@v2
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.DOCKER_TOKEN }}
+
+    - name: Build, tag, and push image to GHCR
+      id: build-image
+      env:
+        IMAGE_NAME: qace-cms
+        COMMIT_ID: ${{ github.sha }}
+      run: |
+        IMAGE_TAG=$(echo $COMMIT_ID | cut -c 1-7)
+        docker build -t $REGISTRY/$REPO_NAME/$IMAGE_NAME:develop-$IMAGE_TAG -f ./apps/pms-web/Dockerfile .
+        docker push $REGISTRY/$REPO_NAME/$IMAGE_NAME:develop-$IMAGE_TAG
+        echo "image=$REGISTRY/$REPO_NAME/$IMAGE_NAME:develop-$IMAGE_TAG" >> $GITHUB_OUTPUT
+        
+    - name: Deploy to Server Instance
+      env:
+          IMAGE: ${{ steps.build-image.outputs.image }}
+          TOKEN: ${{ secrets.DOCKER_TOKEN }}
+      uses: appleboy/ssh-action@master
+      with:
+          host: ${{ secrets.DEPLOY_SERVER }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.PRIVATE_KEY }}
+          envs: IMAGE,TOKEN
+          script: |
+            echo "$TOKEN" | docker login ghcr.io -u USERNAME --password-stdin
+            export QACE_CMS_IMAGE="$IMAGE"
+            docker-compose -f /home/ubuntu/qace/pms-web/compose.yaml up -d
+            docker ps  
