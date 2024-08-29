@@ -41,25 +41,25 @@ jobs:
         COMMIT_ID: ${{ github.sha }}
       run: |
         IMAGE_TAG=$(echo $COMMIT_ID | cut -c 1-7)
-        docker build -t $REGISTRY/$REPO_NAME/$IMAGE_NAME:develop-$IMAGE_TAG -f ./apps/qacehomes-cms/Dockerfile.dev .
+        docker build -t $REGISTRY/$REPO_NAME/$IMAGE_NAME:develop-$IMAGE_TAG Dockerfile .
         docker push $REGISTRY/$REPO_NAME/$IMAGE_NAME:develop-$IMAGE_TAG
         echo "image=$REGISTRY/$REPO_NAME/$IMAGE_NAME:develop-$IMAGE_TAG" >> $GITHUB_OUTPUT
         
-    - name: Deploy to Server Instance
-      env:
-          IMAGE: ${{ steps.build-image.outputs.image }}
-          TOKEN: ${{ secrets.DOCKER_TOKEN }}
-      uses: appleboy/ssh-action@master
-      with:
-          host: ${{ secrets.DEPLOY_SERVER }}
-          username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.PRIVATE_KEY }}
-          envs: IMAGE,TOKEN
-          script: |
-            echo "$TOKEN" | docker login ghcr.io -u USERNAME --password-stdin
-            export QACE_CMS_IMAGE="$IMAGE"
-            docker-compose -f /home/ubuntu/qace/qace-cms/compose.yaml up -d
-            docker ps
+    # - name: Deploy to Server Instance
+    #   env:
+    #       IMAGE: ${{ steps.build-image.outputs.image }}
+    #       TOKEN: ${{ secrets.DOCKER_TOKEN }}
+    #   uses: appleboy/ssh-action@master
+    #   with:
+    #       host: ${{ secrets.DEPLOY_SERVER }}
+    #       username: ${{ secrets.USERNAME }}
+    #       key: ${{ secrets.PRIVATE_KEY }}
+    #       envs: IMAGE,TOKEN
+    #       script: |
+    #         echo "$TOKEN" | docker login ghcr.io -u USERNAME --password-stdin
+    #         export QACE_CMS_IMAGE="$IMAGE"
+    #         docker-compose -f /home/ubuntu/qace/qace-cms/compose.yaml up -d
+    #         docker ps
 
   deployQaceWEB:
     name: Qace WEB Deployment
