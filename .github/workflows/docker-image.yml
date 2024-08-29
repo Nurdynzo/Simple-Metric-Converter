@@ -41,7 +41,7 @@ jobs:
         COMMIT_ID: ${{ github.sha }}
       run: |
         IMAGE_TAG=$(echo $COMMIT_ID | cut -c 1-7)
-        docker build -t $REGISTRY/$REPO_NAME/$IMAGE_NAME:develop-$IMAGE_TAG -f ./apps/pms-web/Dockerfile .
+        docker build -t $REGISTRY/$REPO_NAME/$IMAGE_NAME:develop-$IMAGE_TAG -f ./apps/qacehomes-cms/Dockerfile.dev .
         docker push $REGISTRY/$REPO_NAME/$IMAGE_NAME:develop-$IMAGE_TAG
         echo "image=$REGISTRY/$REPO_NAME/$IMAGE_NAME:develop-$IMAGE_TAG" >> $GITHUB_OUTPUT
         
@@ -58,13 +58,13 @@ jobs:
           script: |
             echo "$TOKEN" | docker login ghcr.io -u USERNAME --password-stdin
             export QACE_CMS_IMAGE="$IMAGE"
-            docker-compose -f /home/ubuntu/qace/pms-web/compose.yaml up -d
+            docker-compose -f /home/ubuntu/qace/qace-cms/compose.yaml up -d
             docker ps
 
   deployQaceWEB:
     name: Qace WEB Deployment
     runs-on: ubuntu-latest
-    if: inputs.publish == 'QACE CMS'
+    if: inputs.publish == 'QACE WEB'
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
@@ -79,11 +79,11 @@ jobs:
     - name: Build, tag, and push image to GHCR
       id: build-image
       env:
-        IMAGE_NAME: qace-cms
+        IMAGE_NAME: qace-web
         COMMIT_ID: ${{ github.sha }}
       run: |
         IMAGE_TAG=$(echo $COMMIT_ID | cut -c 1-7)
-        docker build -t $REGISTRY/$REPO_NAME/$IMAGE_NAME:develop-$IMAGE_TAG -f ./apps/pms-web/Dockerfile .
+        docker build -t $REGISTRY/$REPO_NAME/$IMAGE_NAME:develop-$IMAGE_TAG -f ./apps/qacehomes-web/Dockerfile .
         docker push $REGISTRY/$REPO_NAME/$IMAGE_NAME:develop-$IMAGE_TAG
         echo "image=$REGISTRY/$REPO_NAME/$IMAGE_NAME:develop-$IMAGE_TAG" >> $GITHUB_OUTPUT
         
@@ -99,14 +99,14 @@ jobs:
           envs: IMAGE,TOKEN
           script: |
             echo "$TOKEN" | docker login ghcr.io -u USERNAME --password-stdin
-            export QACE_CMS_IMAGE="$IMAGE"
-            docker-compose -f /home/ubuntu/qace/pms-web/compose.yaml up -d
+            export QACE_WEB_IMAGE="$IMAGE"
+            docker-compose -f /home/ubuntu/qace/qace-web/compose.yaml up -d
             docker ps
 
   deployPMSserver:
     name: PMS Server Deployment
     runs-on: ubuntu-latest
-    if: inputs.publish == 'QACE CMS'
+    if: inputs.publish == 'PMS SERVER'
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
@@ -121,11 +121,11 @@ jobs:
     - name: Build, tag, and push image to GHCR
       id: build-image
       env:
-        IMAGE_NAME: qace-cms
+        IMAGE_NAME: pms-server
         COMMIT_ID: ${{ github.sha }}
       run: |
         IMAGE_TAG=$(echo $COMMIT_ID | cut -c 1-7)
-        docker build -t $REGISTRY/$REPO_NAME/$IMAGE_NAME:develop-$IMAGE_TAG -f ./apps/pms-web/Dockerfile .
+        docker build -t $REGISTRY/$REPO_NAME/$IMAGE_NAME:develop-$IMAGE_TAG -f ./apps/pms-server/Dockerfile .
         docker push $REGISTRY/$REPO_NAME/$IMAGE_NAME:develop-$IMAGE_TAG
         echo "image=$REGISTRY/$REPO_NAME/$IMAGE_NAME:develop-$IMAGE_TAG" >> $GITHUB_OUTPUT
         
@@ -141,14 +141,14 @@ jobs:
           envs: IMAGE,TOKEN
           script: |
             echo "$TOKEN" | docker login ghcr.io -u USERNAME --password-stdin
-            export QACE_CMS_IMAGE="$IMAGE"
-            docker-compose -f /home/ubuntu/qace/pms-web/compose.yaml up -d
+            export PMS_SERVER_IMAGE="$IMAGE"
+            docker-compose -f /home/ubuntu/qace/pms-server/compose.yaml up -d
             docker ps        
 
   deployPMSWEB:
     name: PMS WEB Deployment
     runs-on: ubuntu-latest
-    if: inputs.publish == 'QACE CMS'
+    if: inputs.publish == 'PMS WEB'
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
@@ -163,7 +163,7 @@ jobs:
     - name: Build, tag, and push image to GHCR
       id: build-image
       env:
-        IMAGE_NAME: qace-cms
+        IMAGE_NAME: pms-web
         COMMIT_ID: ${{ github.sha }}
       run: |
         IMAGE_TAG=$(echo $COMMIT_ID | cut -c 1-7)
@@ -183,6 +183,6 @@ jobs:
           envs: IMAGE,TOKEN
           script: |
             echo "$TOKEN" | docker login ghcr.io -u USERNAME --password-stdin
-            export QACE_CMS_IMAGE="$IMAGE"
+            export PMS_WEB_IMAGE="$IMAGE"
             docker-compose -f /home/ubuntu/qace/pms-web/compose.yaml up -d
             docker ps  
